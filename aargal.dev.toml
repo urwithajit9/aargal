@@ -1,0 +1,37 @@
+# =========================
+# AARGAL CONFIGURATION
+# =========================
+
+[general]
+mode = "detect"          # detect | enforce
+state_ttl_seconds = 3600 # IP state eviction time
+
+[ingest]
+source = "file"          # file | stdin
+path = "/var/log/nginx/access.log"
+poll_interval_ms = 500
+
+[parser]
+format = "nginx_combined"  # nginx_combined | json
+ignore_status = [200, 301, 302]
+
+[scoring]
+threshold = 100
+
+[scoring.weights]
+rate = 40
+error = 30
+user_agent = 20
+path_entropy = 10
+
+[actions]
+on_block = "log"         # log | stdout | fail2ban
+
+[fail2ban]
+enabled = true
+socket = "/var/run/fail2ban/fail2ban.sock"
+jail = "aargal-auto"
+
+[logging]
+level = "info"           # trace | debug | info | warn | error
+json = false
