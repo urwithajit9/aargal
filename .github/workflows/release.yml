@@ -1,37 +1,27 @@
 name: Release
 
-# Trigger on new tag push (vX.Y.Z)
 on:
   push:
     tags:
       - 'v*.*.*'
 
 permissions:
-  contents: write   # Required to push tags and create releases
+  contents: write
 
 jobs:
-  # Step 1: Build
-  build:
+  release:
     uses: ./.github/workflows/build.yml
     with:
       release_tag: ${{ github.ref_name }}
 
-  # Step 2: Create GitHub Release
   create_release:
-    needs: build
+    needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: aargal-binary
-          path: dist/
-
-      - name: Create Release with artifact
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: Automated release from CI
-          artifacts: dist/*
           token: ${{ secrets.GITHUB_TOKEN }}
