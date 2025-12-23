@@ -3,38 +3,21 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 jobs:
-  build_release:
+  release:
     uses: ./.github/workflows/build.yml
-    type: workflow
     with:
-      release_mode: true
-    secrets: inherit
+      release_tag: ${{ github.ref_name }}
 
-  publish:
-    needs: build_release
-    runs-on: ubuntu-22.04
+  create_release:
+    needs: release
+    runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: aargal-ubuntu-22.04-x64
-          path: ./release
-
       - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload binary to release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./release/aargal
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          body: Automated release from CI
