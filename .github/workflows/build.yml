@@ -10,19 +10,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+        arch: [x64, arm64]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+
+      - name: Set target triple
+        id: target
+        run: |
+          if [[ "${{ matrix.arch }}" == "x64" ]]; then
+            echo "target=x86_64-unknown-linux-gnu" >> $GITHUB_ENV
+          else
+            echo "target=aarch64-unknown-linux-gnu" >> $GITHUB_ENV
+          fi
+
       - name: Build project
-        run: cargo build --release
+        run: cargo build --release --target ${{ env.target }}
+
       - name: Package binaries
-        run: tar czf aargal-${{ inputs.release_tag }}-linux.tar.gz target/release/aargal
-      - name: Upload artifact
+        run: |
+          mkdir -p dist
+          tar czf dist/aargal-${{ inputs.release_tag }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz -C target/${{ env.target }}/release aargal
+
+      - name: Generate SHA256 checksum
+        run: |
+          for f in dist/*; do
+            sha256sum "$f" > "$f".sha256
+          done
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: aargal-binary
-          path: aargal-${{ inputs.release_tag }}-linux.tar.gz
+          name: aargal-binaries
+          path: dist/

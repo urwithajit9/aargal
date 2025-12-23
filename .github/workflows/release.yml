@@ -21,21 +21,17 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aargal-binary
+          path: dist/
 
-      - name: Create Release
+      - name: Create Release with artifact
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: Automated release from CI
+          artifacts: dist/*
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload build artifact to release
-        uses: actions/upload-release-asset@v2
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: aargal-${{ github.ref_name }}-linux.tar.gz
-          asset_name: aargal-${{ github.ref_name }}-linux.tar.gz
-          asset_content_type: application/gzip
