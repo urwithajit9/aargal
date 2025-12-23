@@ -633,7 +633,7 @@ flowchart TD
     D -- Yes --> F[CI Success, report status]
 
     A2[Developer pushes Git tag vX.Y.Z] --> G[GitHub Actions Release: release.yml]
-    G --> H[Reusable Build Job: build-job.yml (release_mode: true)]
+    G --> H["Reusable Build Job: build-job.yml (release_mode: true)"]
     H --> I{Build & Tests Pass?}
     I -- No --> J[Release fails, notify developer]
     I -- Yes --> K[Package binaries for all OS/Arch]
@@ -666,5 +666,182 @@ flowchart TD
    * Production server downloads the binary from GitHub release.
    * Runs `aargal` with the specified config.
    * Processes Nginx logs and optionally triggers Fail2Ban actions.
+
+---
+
+## Installation
+
+Aargal is distributed as a **precompiled Linux binary** via GitHub Releases.
+No Rust toolchain is required on the target server.
+
+> **Supported platforms**
+>
+> * Linux (Ubuntu 20.04 / 22.04 tested)
+> * Architectures:
+>
+>   * `x86_64` (Intel / AMD)
+>   * `aarch64` (ARM, e.g. AWS Graviton)
+>
+> macOS and Windows are **not supported** in Phase 1.
+
+---
+
+### 1. Quick Install (Recommended)
+
+Use the official install script hosted in this repository.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/urwithajit9/aargal/main/scripts/install.sh | sh
+```
+
+What this does:
+
+1. Detects OS and CPU architecture
+2. Downloads the correct release binary
+3. Verifies the archive
+4. Installs `aargal` to `/usr/local/bin`
+5. Makes it executable
+
+After installation:
+
+```bash
+aargal --version
+```
+
+---
+
+### 2. Install a Specific Version
+
+By default, the installer fetches the **latest release**.
+
+To install a specific version:
+
+```bash
+AARGAL_VERSION=v0.1.3 \
+curl -fsSL https://raw.githubusercontent.com/urwithajit9/aargal/main/scripts/install.sh | sh
+```
+
+---
+
+### 3. Manual Installation (Advanced / Offline)
+
+If you prefer not to use the install script:
+
+1. Download the release archive from GitHub:
+
+```bash
+curl -LO https://github.com/urwithajit9/aargal/releases/download/v0.1.3/aargal-v0.1.3-linux-x86_64.tar.gz
+```
+
+2. Extract the binary:
+
+```bash
+tar -xzf aargal-v0.1.3-linux-x86_64.tar.gz
+```
+
+3. Move it into your PATH:
+
+```bash
+sudo mv aargal /usr/local/bin/
+sudo chmod +x /usr/local/bin/aargal
+```
+
+4. Verify:
+
+```bash
+aargal --help
+```
+
+---
+
+### 4. Architecture Detection (Troubleshooting)
+
+To determine which binary you need:
+
+```bash
+uname -s
+uname -m
+```
+
+Expected values:
+
+| Output    | Meaning                  |
+| --------- | ------------------------ |
+| `Linux`   | Supported OS             |
+| `x86_64`  | Intel / AMD              |
+| `aarch64` | ARM (AWS Graviton, etc.) |
+
+---
+
+### 5. Configuration
+
+Create a configuration file:
+
+```bash
+sudo mkdir -p /etc/aargal
+sudo cp aargal.dev.toml /etc/aargal/aargal.toml
+```
+
+Edit as needed:
+
+```bash
+sudo nano /etc/aargal/aargal.toml
+```
+
+---
+
+### 6. Running Aargal
+
+Run manually for testing:
+
+```bash
+aargal --config /etc/aargal/aargal.toml
+```
+
+Typical usage is as a **long-running process** (systemd service recommended in future releases).
+
+---
+
+### 7. Where to See the Impact
+
+Once running, Aargal will:
+
+* Read Nginx access logs
+* Detect abusive behavior
+* Emit actions based on mode:
+
+  * **Detect mode** → logs only
+  * **Enforce mode** → Fail2Ban integration
+
+Verify effects via:
+
+```bash
+sudo fail2ban-client status
+sudo fail2ban-client status <jail>
+```
+
+And logs:
+
+```bash
+journalctl -u fail2ban
+```
+
+---
+
+### 8. Uninstall
+
+```bash
+sudo rm /usr/local/bin/aargal
+sudo rm -rf /etc/aargal
+```
+
+---
+
+## Notes for Operators
+
+* Aargal **never modifies firewall rules directly**
+* All enforcement is delegated to Fail2Ban
+* Safe to deploy alongside existing setups
+* Designed for deterministic, auditable behavior
 
 
