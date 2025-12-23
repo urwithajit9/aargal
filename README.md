@@ -626,25 +626,46 @@ aargal --config /etc/aargal/aargal.toml
 
 ```mermaid
 flowchart TD
-    A[Developer pushes code / PR] --> B[GitHub Actions CI: build.yml]
-    B --> C[Reusable Build Job: build-job.yml]
-    C --> D{Tests Pass?}
-    D -- No --> E[CI Fails, notify developer]
-    D -- Yes --> F[CI Success, report status]
+    %% CI Section
+    A[Developer pushes code / PR] --> B[GitHub Actions CI]
+    B --> C[Reusable Workflow: build.yml]
+    D[Checkout + Install Rust] --> E[Run Tests]
+    E --> F{Tests Pass?}
+    F -- No --> G[CI Fails → Notify Developer]
+    F -- Yes --> H[Build Linux Binary]
+    H --> I[CI Success → Status Reported]
 
-    A2[Developer pushes Git tag vX.Y.Z] --> G[GitHub Actions Release: release.yml]
-    G --> H["Reusable Build Job: build-job.yml (release_mode: true)"]
-    H --> I{Build & Tests Pass?}
-    I -- No --> J[Release fails, notify developer]
-    I -- Yes --> K[Package binaries for all OS/Arch]
-    K --> L[Create GitHub Release]
-    L --> M[Upload binaries as assets]
+    %% Release Section
+    A2[Developer pushes Git tag vX.Y.Z] --> J[GitHub Actions: release.yml]
+    J --> K[Call reusable build.yml]
+    K --> L["Build Linux Binary (Release Mode)"]
+    L --> M{Build & Tests Pass?}
+    M -- No --> N[Release Fails → Notify Developer]
+    M -- Yes --> O[Package Binary → .tar.gz]
+    O --> P[Upload Artifact]
 
-    M --> N[Production/EC2 Server]
-    N --> O[Download binary]
-    O --> P[Run aargal with config]
-    P --> Q[Parse Nginx logs, generate decisions]
-    Q --> R[Emit logs / optionally notify Fail2Ban]
+    %% GitHub Release Section
+    P --> Q[Create GitHub Release]
+    Q --> R[Attach .tar.gz as Release Asset]
+    R --> S[Release Published]
+
+    %% Installation Section
+    S --> T[User copies install command from website]
+    T --> U["curl | wget install.sh"]
+    U --> V[Download correct Linux binary]
+    V --> W[Install to /usr/local/bin/aargal]
+    W --> X[Install config to /etc/aargal]
+    X --> Y[Install systemd service]
+    Y --> Z[Enable & Start aargal service]
+
+    %% Runtime Section
+    Z --> AA[Aargal running as systemd service]
+    AA --> AB[Parse Nginx access/error logs]
+    AB --> AC[Detect abusive IPs]
+    AC --> AD[Write BAN events to log]
+    AD --> AE[Fail2Ban jail monitors log]
+    AE --> AF[Fail2Ban enforces firewall ban]
+
 ```
 
 **Explanation of the flow:**
