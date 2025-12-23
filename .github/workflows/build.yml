@@ -10,14 +10,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+        arch: [x64, arm64]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-rust@v1
+
+      - name: Setup Rust
+        uses: actions/setup-rust@v1
         with:
           rust-version: stable
-      - run: cargo build --release
-      - uses: actions/upload-artifact@v4
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
         with:
-          name: aargal-build
+          name: aargal-${{ matrix.os }}-${{ matrix.arch }}
           path: target/release/aargal

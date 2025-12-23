@@ -8,7 +8,7 @@ on:
 jobs:
   build_release:
     uses: ./.github/workflows/build.yml
-    type: workflow          # <- This is mandatory!
+    type: workflow
     with:
       release_mode: true
     secrets: inherit
@@ -17,18 +17,23 @@ jobs:
     needs: build_release
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: aargal-build
+          name: aargal-ubuntu-22.04-x64
           path: ./release
+
       - name: Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: softprops/action-gh-release@v1
+
+      - name: Upload binary to release
+        uses: softprops/action-gh-release@v1
         with:
           files: ./release/aargal
         env:
