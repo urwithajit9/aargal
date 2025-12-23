@@ -472,7 +472,199 @@ flowchart TD
 8. **Outputs** – Writes logs, stdout, or triggers Fail2Ban as configured.
 9. **Audit & Review** – All actions are deterministic, logged, and can feed back into monitoring or tuning.
 
+---
+
+# **Aargal CI/CD — GitHub Actions**
+
+This section describes how the **build and release automation** works for the `aargal` Rust project.
+
+---
+
+## **Overview**
+
+`aargal` uses **GitHub Actions** for:
+
+1. **Continuous Integration (CI)** — building and testing on multiple OS + architectures.
+2. **Continuous Deployment / Release (CD)** — building release binaries and publishing GitHub releases automatically.
+
+**Design Principles:**
+
+* **Modular workflows:** Reusable build job is shared between CI and release.
+* **Multi-platform:** Supports `ubuntu-22.04` and `ubuntu-20.04`, `x86_64` and `aarch64`.
+* **Deterministic releases:** Release triggered by Git tag push (`vX.Y.Z`).
+* **Artifact-based:** Binaries are uploaded as release assets.
+
+---
+
+## **Folder Structure**
+
+```
+.github/
+└── workflows/
+    ├── build.yml           # CI workflow (build + test)
+    ├── release.yml         # Release workflow (build + GitHub release)
+
+```
 
 
+* `build.yml` contains the actual build/test steps and handles multiple OS + arch.
+* `release.yml` calls the reusable workflow in **release mode** and publishes a GitHub release.
+
+---
+
+## **Reusable Build Workflow**
+
+**Capabilities:**
+
+* Installs Rust toolchain.
+* Caches `Cargo` dependencies and build outputs.
+* Builds the project in release mode.
+* Runs unit tests.
+* Optionally packages binaries for release (`release_mode: true`).
+
+---
+
+## **CI Workflow (build.yml)**
+
+* Triggered on:
+
+  * Push to `main` or `dev`.
+  * Pull requests.
+
+* Runs tests but **does not upload release binaries**.
+
+* Uses the reusable build workflow.
+
+---
+
+## **Release Workflow (release.yml)**
+
+* Triggered **only on tag push**, e.g., `v0.1.0`.
+* Steps:
+
+  1. Calls reusable build workflow with `release_mode: true`.
+  2. Downloads generated binaries.
+  3. Creates a GitHub release using `softprops/action-gh-release`.
+  4. Uploads binaries as release assets.
+
+---
+
+## **How to Tag & Release**
+
+1. Ensure your local repository is up-to-date:
+
+```bash
+git fetch origin
+git checkout main
+git pull
+```
+
+2. Create a release tag:
+
+```bash
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+3. GitHub Actions will automatically:
+
+* Build and test the project on all defined OS + architectures.
+* Package release binaries.
+* Create a GitHub release with binaries attached.
+
+---
+
+## **Expected Release Artifacts**
+
+For each OS/arch combination:
+
+```
+aargal-ubuntu-22.04-x86_64
+aargal-ubuntu-22.04-aarch64
+aargal-ubuntu-20.04-x86_64
+aargal-ubuntu-20.04-aarch64
+```
+
+* Binaries are placed as **assets** under the GitHub release page.
+* Users can download the appropriate binary for their system.
+
+---
+
+## **Manual Deployment from Release**
+
+1. SSH into your server (EC2 or VPS).
+2. Download the appropriate binary:
+
+```bash
+wget https://github.com/<org>/aargal/releases/download/v0.1.0/aargal-ubuntu-22.04-x86_64
+chmod +x aargal-ubuntu-22.04-x86_64
+sudo mv aargal-ubuntu-22.04-x86_64 /usr/local/bin/aargal
+```
+
+3. Run `aargal` with your configuration:
+
+```bash
+aargal --config /etc/aargal/aargal.toml
+```
+
+4. Monitor logs or integrate with Fail2Ban:
+
+* Nginx logs are parsed.
+* Decisions (Allow / Detect / Block) are logged and optionally sent to Fail2Ban.
+
+---
+
+## **Benefits**
+
+* **No Rust setup required on production server.**
+* **Multi-platform builds** handled automatically.
+* **Reproducible releases** with attached binaries.
+* **Modular workflows** reduce duplication and simplify maintenance.
+
+---
+
+
+```mermaid
+flowchart TD
+    A[Developer pushes code / PR] --> B[GitHub Actions CI: build.yml]
+    B --> C[Reusable Build Job: build-job.yml]
+    C --> D{Tests Pass?}
+    D -- No --> E[CI Fails, notify developer]
+    D -- Yes --> F[CI Success, report status]
+
+    A2[Developer pushes Git tag vX.Y.Z] --> G[GitHub Actions Release: release.yml]
+    G --> H[Reusable Build Job: build-job.yml (release_mode: true)]
+    H --> I{Build & Tests Pass?}
+    I -- No --> J[Release fails, notify developer]
+    I -- Yes --> K[Package binaries for all OS/Arch]
+    K --> L[Create GitHub Release]
+    L --> M[Upload binaries as assets]
+
+    M --> N[Production/EC2 Server]
+    N --> O[Download binary]
+    O --> P[Run aargal with config]
+    P --> Q[Parse Nginx logs, generate decisions]
+    Q --> R[Emit logs / optionally notify Fail2Ban]
+```
+
+**Explanation of the flow:**
+
+1. **CI (`build.yml`)**:
+
+   * Triggered by pushes or PRs.
+   * Uses **reusable build job** to compile and run tests.
+   * Reports success/failure in PR status.
+
+2. **Release (`release.yml`)**:
+
+   * Triggered by **Git tag push**.
+   * Calls **reusable build job** in release mode.
+   * Packages binaries and attaches them to the GitHub release.
+
+3. **Deployment**:
+
+   * Production server downloads the binary from GitHub release.
+   * Runs `aargal` with the specified config.
+   * Processes Nginx logs and optionally triggers Fail2Ban actions.
 
 

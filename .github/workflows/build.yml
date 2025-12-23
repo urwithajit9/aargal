@@ -1,12 +1,46 @@
-name: CI Build & Test
+name: Build
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
+  workflow_call:
+    inputs:
+      release_mode:
+        description: 'Whether this build is for a release'
+        required: false
+        default: 'false'
 
 jobs:
-  call-build:
-    uses: ./.github/workflows/reusable/build-job.yml
-    with:
-      release_mode: false
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+        arch: [x86_64, aarch64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Aargal
+        run: |
+          cargo build --release
+        env:
+          RUSTFLAGS: "-C target-cpu=native"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aargal-${{ matrix.os }}-${{ matrix.arch }}
+          path: target/release/aargal
