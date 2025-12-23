@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::Duration;
-
+use crate::parser::ParsedEvent;
 use super::ip_state::IpState;
 
 #[derive(Debug)]
@@ -50,6 +50,15 @@ impl StateStore {
     pub fn is_empty(&self) -> bool {
         self.states.is_empty()
     }
+
+    pub fn update(&mut self, event: &ParsedEvent) -> &IpState {
+    let state = self.states
+        .entry(event.ip.clone())
+        .or_insert_with(|| IpState::new(event.ip.clone()));
+
+    state.record(event);
+    state
+}
 }
 
 

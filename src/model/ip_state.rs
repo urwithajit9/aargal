@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-
+use crate::parser::ParsedEvent;
 #[derive(Debug, Clone)]
 pub struct IpState {
     pub ip: String,
@@ -30,6 +30,16 @@ impl IpState {
             last_seen: now,
             score: 0,
             blocked: false,
+        }
+    }
+
+    pub fn record(&mut self, event: &ParsedEvent) {
+        self.request_count += 1;
+
+        self.last_seen = Instant::now();
+
+        if event.status >= 400 {
+            self.error_count += 1;
         }
     }
 

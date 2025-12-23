@@ -1,7 +1,7 @@
 use crate::engine::action::ActionResult;
-use crate::config::schema::{BlockAction, Fail2BanConfig};
+use crate::config::schema::{BlockAction};
 use crate::engine::scoring::ScoreResult;
-
+use crate::config::schema::Fail2BanConfig;
 #[derive(Debug)]
 pub enum ExecutorError {
     Io(std::io::Error),
@@ -53,7 +53,7 @@ mod tests {
     use super::*;
     use crate::engine::scoring::{ScoreResult};
     use crate::engine::scoring::ScoreReason;
-    use crate::config::schema::{BlockAction, Fail2BanConfig};
+    use crate::config::schema::{BlockAction};
 
     fn score() -> ScoreResult {
         ScoreResult {

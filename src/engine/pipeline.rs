@@ -1,5 +1,6 @@
-use crate::config::schema::AppConfig;
-use crate::engine::decision::{decide, Decision};
+use crate::config::schema::AargalConfig;
+use crate::engine::action::map_decision_to_action;
+use crate::engine::decision::{decide};
 use crate::engine::scoring::{score_ip, ScoreResult};
 use crate::model::state_store::StateStore;
 use crate::parser::ParsedEvent;
@@ -16,14 +17,14 @@ pub enum PipelineError {
 pub fn process_event(
     event: ParsedEvent,
     state: &mut StateStore,
-    config: &AppConfig,
+    config: &AargalConfig,
 ) -> Result<(), PipelineError> {
     /*
      * STEP 1 — Update IP state
      */
     let ip_state = state
-        .update(&event)
-        .map_err(|_| PipelineError::StateUpdate)?;
+        .update(&event);
+
 
     /*
      * STEP 2 — Score behavior
@@ -34,17 +35,26 @@ pub fn process_event(
     /*
      * STEP 3 — Make decision
      */
-    let decision: Decision =
-        decide(&score, &config.general);
+    let decision = decide(
+        &score,
+        &config.general,
+        &config.scoring,
+    );
+
+    let action = map_decision_to_action(
+    decision,
+    &config.general,
+    &config.actions,
+);
 
     /*
      * STEP 4 — Execute action (side-effects only here)
      */
     execute_action(
-        decision,
+        action,
         &ip_state.ip,
         &score,
-        &config,
+        Some(&config.fail2ban),
     )
     .map_err(|_| PipelineError::Action)?;
 

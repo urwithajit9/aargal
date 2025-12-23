@@ -34,7 +34,10 @@ mod tests {
 
     fn enforce_cfg() -> (GeneralConfig, ActionsConfig) {
         (
-            GeneralConfig { mode: RunMode::Enforce },
+            GeneralConfig {
+                mode: RunMode::Enforce,
+                state_ttl_seconds: 3600,
+            },
             ActionsConfig { on_block: BlockAction::Log },
         )
     }
@@ -48,7 +51,7 @@ mod tests {
 
     #[test]
     fn block_in_detect_does_not_trigger() {
-        let g = GeneralConfig { mode: RunMode::Detect };
+        let g = GeneralConfig { mode: RunMode::Detect,state_ttl_seconds: 3600 };
         let a = ActionsConfig { on_block: BlockAction::Fail2ban };
         let result = map_decision_to_action(Decision::Block, &g, &a);
         assert_eq!(result, ActionResult::DetectOnly);
