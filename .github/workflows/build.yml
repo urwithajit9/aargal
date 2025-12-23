@@ -1,38 +1,12 @@
-name: Build Aargal
+name: CI Build & Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, ubuntu-20.04]
-        arch: [x86_64, aarch64]
-
-    steps:
-      # Step 1: Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Step 2: Install Rust toolchain
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      # Step 3: Build release binary
-      - name: Build release
-        run: cargo build --release
-
-      # Step 4: Upload binary as artifact (updated to v4)
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: aargal-${{ matrix.os }}-${{ matrix.arch }}
-          path: target/release/aargal
+  call-build:
+    uses: ./.github/workflows/reusable/build-job.yml
+    with:
+      release_mode: false
