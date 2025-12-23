@@ -1,27 +1,35 @@
 name: Release
 
+# Trigger workflow on new tag push (vX.Y.Z)
 on:
   push:
     tags:
       - 'v*.*.*'
 
+# Required to create releases
 permissions:
   contents: write
 
 jobs:
+  # Step 1: Build the binary
   release:
     uses: ./.github/workflows/build.yml
     with:
       release_tag: ${{ github.ref_name }}
 
+  # Step 2: Create GitHub release and attach binary
   create_release:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: Create GitHub Release
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release with binary
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: Automated release from CI
+          artifacts: aargal-${{ github.ref_name }}-linux.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
