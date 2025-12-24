@@ -1,6 +1,6 @@
 use crate::config::schema::{GeneralConfig, RunMode,ScoringConfig};
 use crate::engine::scoring::ScoreResult;
-use crate::config::schema::ScoringWeights;
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Decision {
@@ -26,10 +26,13 @@ pub fn decide(
 
 
 #[cfg(test)]
+
 mod tests {
     use super::*;
     use crate::config::schema::{GeneralConfig, RunMode};
     use crate::engine::scoring::ScoreReason;
+    use crate::config::schema::ScoringWeights;
+
 
     fn general_detect() -> GeneralConfig {
         GeneralConfig {

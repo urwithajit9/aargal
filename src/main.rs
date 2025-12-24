@@ -1,47 +1,39 @@
-use clap::Parser;
-use std::path::Path;
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
-use aargal::config::loader::load_config;
-use aargal::engine::pipeline::process_event;
-use aargal::ingest::{Ingestor, file::FileIngestor, stdin::StdinIngestor};
-use aargal::model::state_store::StateStore;
-use aargal::config::schema::IngestSource;
+use aargal::doctor::run_doctor;
+
 #[derive(Parser)]
 #[command(name = "aargal")]
 #[command(about = "Aargal — Intelligent Request Barriers for Self-Hosted Systems")]
 struct Cli {
-    /// Path to config file
-    #[arg(short, long)]
-    config: String,
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Run Aargal as daemon
+    Run {
+        #[arg(short, long)]
+        config: PathBuf,
+    },
+    /// Validate configuration and environment
+    Doctor {
+        #[arg(short, long)]
+        config: PathBuf,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-
-    println!("Starting Aargal with config: {}", cli.config);
-
-    let config = load_config(Path::new(&cli.config))?;
-
-    let mut state = StateStore::new(config.general.state_ttl_seconds);
-
-    let mut ingestor: Box<dyn Ingestor> = match config.ingest.source {
-        IngestSource::File => {
-            let file_ingestor = FileIngestor::new(
-                config.ingest.path.clone(),
-                config.ingest.poll_interval_ms,
-            )?;
-            Box::new(file_ingestor)
+    match cli.command {
+        Command::Run { config } => {
+            aargal::run_daemon(&config)
         }
-        IngestSource::Stdin => {
-            Box::new(StdinIngestor::new())
-        }
-    };
-
-
-    loop {
-        if let Some(event) = ingestor.next_event() {
-            let _ = process_event(event, &mut state, &config);
+        Command::Doctor { config } => {
+            run_doctor(&config)
         }
     }
 }
