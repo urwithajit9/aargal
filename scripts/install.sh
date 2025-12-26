@@ -8,6 +8,7 @@ set -e
 REPO="urwithajit9/aargal"
 INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="aargal"
+EXAMPLE_CONFIG_NAME="aargal.example.toml"
 
 VERSION="${AARGAL_VERSION:-latest}"
 
@@ -147,8 +148,13 @@ if [ "$ENABLE_SERVICE" -eq 1 ]; then
   $SUDO mkdir -p /etc/aargal
 
   if [ ! -f /etc/aargal/aargal.toml ]; then
-    echo "⚠️  No config found, copying example"
-    $SUDO cp aargal.toml /etc/aargal/aargal.toml
+    if [ -f "$TMP_DIR/$EXAMPLE_CONFIG_NAME" ]; then
+      echo "📄 Installing default configuration"
+      $SUDO cp "$TMP_DIR/$EXAMPLE_CONFIG_NAME" /etc/aargal/aargal.toml
+    else
+      echo "❌ Example config not found in archive"
+      exit 1
+    fi
   else
     echo "ℹ️  Existing config preserved"
   fi
@@ -178,5 +184,6 @@ echo "✅ Installation complete"
 
 echo ""
 echo "Next steps:"
-echo "  aargal --config /etc/aargal/aargal.toml"
+echo "  sudo nano /etc/aargal/aargal.toml"
+echo "  aargal doctor"
 echo "  journalctl -u aargal -f"
