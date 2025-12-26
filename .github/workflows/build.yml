@@ -10,17 +10,50 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+
       - name: Build project
         run: cargo build --release
-      - name: Package binaries
-        run: tar czf aargal-${{ inputs.release_tag }}-linux.tar.gz target/release/aargal
+
+      # ------------------------------------------------------------
+      # Prepare release artifact layout
+      #
+      # Resulting tarball structure:
+      #
+      # aargal
+      # aargal.example.toml
+      # packaging/
+      #   systemd/
+      #     aargal.service
+      # ------------------------------------------------------------
+      - name: Package release artifacts
+        run: |
+          set -e
+
+          mkdir -p dist
+
+          # Binary
+          cp target/release/aargal dist/
+
+          # Example configuration
+          cp config/aargal.example.toml dist/
+
+          # systemd service
+          mkdir -p dist/packaging
+          cp -r packaging/systemd dist/packaging/
+
+          # Create tarball
+          tar czf aargal-${{ inputs.release_tag }}-linux.tar.gz -C dist .
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
