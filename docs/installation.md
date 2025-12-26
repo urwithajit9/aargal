@@ -25,8 +25,8 @@ Other architectures (ARM, macOS, Windows) are **not supported in Phase 1**.
 ### Runtime Dependencies
 
 * Nginx (access logs enabled)
-* Fail2Ban (optional, for enforcement)
-* systemd (for service mode)
+* Fail2Ban (optional, for enforcement mode)
+* systemd (required for service mode)
 
 ---
 
@@ -39,19 +39,34 @@ Aargal provides a single installer script that:
 * Detects OS & architecture
 * Downloads the correct release binary
 * Installs it to `/usr/local/bin`
-* Optionally enables and starts a systemd service
+* Optionally installs and starts a systemd service
+* Installs a default configuration on first run
 
 #### Install binary only
 
 ```bash
-curl -fsSL https://your-site/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/urwithajit9/aargal/main/install.sh | sh
 ```
+
+This installs only the `aargal` binary. No system users, configuration, or services are created.
+
+---
 
 #### Install and start system service immediately
 
 ```bash
-curl -fsSL https://your-site/install.sh | sudo sh -s -- --enable-service
+curl -fsSL https://raw.githubusercontent.com/urwithajit9/aargal/main/install.sh | sudo sh -s -- --enable-service
 ```
+
+This will:
+
+* Create a system user `aargal`
+* Install `/etc/systemd/system/aargal.service`
+* Install `/etc/aargal/aargal.toml` (if missing)
+* Start the service immediately
+* Enable it at boot
+
+---
 
 #### Custom Nginx log group (optional)
 
@@ -59,8 +74,13 @@ curl -fsSL https://your-site/install.sh | sudo sh -s -- --enable-service
 sudo ./install.sh --enable-service --nginx-group=nginx
 ```
 
-> If not specified, the installer auto-detects the group from `/var/log/nginx/access.log`
-> (typically `www-data`).
+If not specified, the installer auto-detects the group from:
+
+```text
+/var/log/nginx/access.log
+```
+
+(typically `www-data`).
 
 ---
 
@@ -81,6 +101,8 @@ Verify:
 aargal --version
 ```
 
+> Note: Manual installation does **not** create configuration files or systemd services automatically.
+
 ---
 
 ## Configuration
@@ -91,18 +113,33 @@ aargal --version
 /etc/aargal/aargal.toml
 ```
 
-### Example Run (manual)
+When installed as a service, this file is created automatically **only if it does not already exist**.
+
+It is copied from the release bundle:
+
+```text
+aargal.example.toml → /etc/aargal/aargal.toml
+```
+
+Existing configurations are never overwritten.
+
+---
+
+### Manual Run Example
 
 ```bash
 aargal --config /etc/aargal/aargal.toml
 ```
 
+---
+
 ### Key Configuration Sections
 
-* `[ingest]` – where logs are read from
-* `[scoring]` – behavior thresholds
-* `[actions]` – what happens on block
-* `[fail2ban]` – integration settings
+* `[ingest]` – log source and polling
+* `[parser]` – log format and filtering
+* `[scoring]` – thresholds and weights
+* `[actions]` – behavior on block
+* `[fail2ban]` – socket and jail integration
 
 Aargal does **not** modify Nginx or Fail2Ban configuration automatically.
 
@@ -127,7 +164,7 @@ Running Aargal as a systemd service provides:
 * Reads Nginx logs via group permissions
 * Long-running daemon
 * Tails `access.log`
-* Restarts on failure (with systemd backoff)
+* Restarts on failure with backoff
 * Does **not** restart in a tight loop
 
 ---
@@ -184,7 +221,7 @@ This includes:
 
 * Detects abusive behavior
 * Emits Fail2Ban-compatible ban commands
-* Communicates via Fail2Ban socket
+* Communicates via the Fail2Ban socket
 
 ### What Aargal Does NOT Do
 
@@ -240,7 +277,7 @@ fail2ban-client status aargal-auto
 
 * No root runtime
 * Read-only access to logs
-* Explicit config path
+* Explicit configuration path
 * Deterministic decisions
 * No network listeners
 
@@ -269,6 +306,3 @@ sudo userdel aargal
 | Hot reload           | No (restart service) |
 | Auto-update          | Planned              |
 | Multi-node           | Planned              |
-
----
-
