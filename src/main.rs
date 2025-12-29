@@ -26,6 +26,14 @@ enum Command {
 }
 
 fn main() -> anyhow::Result<()> {
+    // ---- Logging initialization (release-safe) ----
+    env_logger::Builder::from_env(
+        env_logger::Env::default()
+            .filter_or("RUST_LOG", "info"),
+    )
+    .init();
+    // ----------------------------------------------
+
     let cli = Cli::parse();
 
     match cli.command {
@@ -37,3 +45,4 @@ fn main() -> anyhow::Result<()> {
         }
     }
 }
+

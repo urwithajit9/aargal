@@ -20,10 +20,12 @@ pub fn execute_action(
     score: &ScoreResult,
     fail2ban: Option<&Fail2BanConfig>,
 ) -> Result<(), ExecutorError> {
+    println!("Inside execute_action()-> action: {:?} IP: {:?} Score: {:?}",action,ip, score);
     match action {
         ActionResult::None => Ok(()),
 
         ActionResult::DetectOnly => {
+            println!("Inside execute_action() ActionResult, DetectOnly");
             crate::output::log::log_detect(ip, score);
             Ok(())
         }

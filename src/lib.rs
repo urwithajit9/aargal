@@ -19,6 +19,7 @@ pub fn run_daemon(config_path: &Path) -> anyhow::Result<()> {
     println!("Starting Aargal with config: {}", config_path.display());
 
     let config = load_config(config_path)?;
+    println!("Loaded config: {:?}", config);
 
     let mut state = StateStore::new(config.general.state_ttl_seconds);
 
@@ -36,7 +37,9 @@ pub fn run_daemon(config_path: &Path) -> anyhow::Result<()> {
     };
 
     loop {
+        // println!("Inside run deamon loop");
         if let Some(event) = ingestor.next_event() {
+            println!("INGESTED EVENT: {:?}", event);
             let _ = process_event(event, &mut state, &config);
         }
     }

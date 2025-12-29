@@ -25,12 +25,15 @@ pub fn process_event(
     let ip_state = state
         .update(&event);
 
+    println!("IP state in process_event() : {:?}", ip_state);
 
     /*
      * STEP 2 — Score behavior
      */
     let score: ScoreResult =
         score_ip(&ip_state, &config.scoring);
+
+    println!("Score in process_event() : {:?}", score);
 
     /*
      * STEP 3 — Make decision
@@ -41,11 +44,14 @@ pub fn process_event(
         &config.scoring,
     );
 
+    println!("IP decision in process_event() : {:?}", decision);
+
     let action = map_decision_to_action(
     decision,
     &config.general,
     &config.actions,
 );
+   println!("IP action in process_event() : {:?}", action);
 
     /*
      * STEP 4 — Execute action (side-effects only here)
