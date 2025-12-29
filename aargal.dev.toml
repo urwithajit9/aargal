@@ -3,7 +3,7 @@
 # =========================
 
 [general]
-mode = "detect"          # detect | enforce
+mode = "enforce"          # detect | enforce
 state_ttl_seconds = 3600 # IP state eviction time
 
 [ingest]
