@@ -1,0 +1,24 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "nginx-log-tool (Rust)" {
+  [scan mode]
+  [tail mode]
+  [serve mode]
+}
+
+package "Use Cases" {
+  [Security / Fail2Ban]
+  [Dashboards / Analytics]
+  [CI / Reports]
+}
+
+[scan mode] --> [CI / Reports]
+[scan mode] --> [Dashboards / Analytics]
+
+[tail mode] --> [Security / Fail2Ban]
+[tail mode] --> [Dashboards / Analytics]
+
+[serve mode] --> [Dashboards / Analytics]
+
+@enduml

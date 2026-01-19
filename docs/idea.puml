@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Log Sources" {
+  [NGINX Access Logs]
+  [Apache Access Logs]
+  [Caddy / Traefik (JSON Logs)]
+  [IIS / HAProxy Logs]
+}
+
+package "Proposed Rust Log Parser" {
+  [Input Readers]
+  [Parser Abstraction]
+  [NginxParser]
+  [ApacheParser]
+  [JsonParser]
+  [Core Event Model]
+  [Filters & Rules]
+  [Aggregators]
+}
+
+package "Output Adapters" {
+  [Summary Output]
+  [JSON Output]
+  [Banlist Output]
+  [Prometheus Output]
+}
+
+package "Downstream Tools" {
+  [Fail2Ban]
+  [WAF / Firewall]
+  [ELK / OpenSearch]
+  [Grafana Dashboard]
+  [CSV / BI Tools]
+}
+
+[NGINX Access Logs] --> [Input Readers]
+[Apache Access Logs] --> [Input Readers]
+[Caddy / Traefik (JSON Logs)] --> [Input Readers]
+[IIS / HAProxy Logs] --> [Input Readers]
+
+[Input Readers] --> [Parser Abstraction]
+
+[Parser Abstraction] --> [NginxParser]
+[Parser Abstraction] --> [ApacheParser]
+[Parser Abstraction] --> [JsonParser]
+
+[NginxParser] --> [Core Event Model]
+[ApacheParser] --> [Core Event Model]
+[JsonParser] --> [Core Event Model]
+
+[Core Event Model] --> [Filters & Rules]
+[Filters & Rules] --> [Aggregators]
+[Aggregators] --> [Summary Output]
+[Aggregators] --> [JSON Output]
+[Aggregators] --> [Banlist Output]
+[Aggregators] --> [Prometheus Output]
+
+[Summary Output] --> [CSV / BI Tools]
+[JSON Output] --> [ELK / OpenSearch]
+[Prometheus Output] --> [Grafana Dashboard]
+[Banlist Output] --> [Fail2Ban]
+[Banlist Output] --> [WAF / Firewall]
+
+@enduml

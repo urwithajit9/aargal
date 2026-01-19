@@ -1,0 +1,36 @@
+@startuml
+title nginx-log-tool — Tail / Agent Mode (Live Processing)
+
+actor "System / NGINX" as N
+participant "Log File" as L
+participant "nginx-log-tool\n(Input Reader)" as R
+participant "Parser Abstraction" as P
+participant "NginxParser" as NP
+participant "Core Event Model" as E
+participant "Filters & Rules" as F
+participant "Aggregators" as A
+participant "Banlist Output" as B
+participant "JSON Output" as J
+participant "Fail2Ban" as FB
+participant "Dashboard / ELK" as D
+
+N -> L : Writes access.log line
+R -> L : tail -f / read new line
+R -> P : raw log line
+P -> NP : parse_line(line)
+NP --> P : Event{ip, status, path, ts}
+P -> E : normalize Event
+E -> F : apply filters (status>=400 etc)
+F -> A : update counters / windows
+A -> B : emit suspicious IPs
+A -> J : emit structured JSON
+
+B -> FB : update ban list
+J -> D : send log event / metrics
+
+loop Continuous
+  N -> L : Writes new line
+  R -> L : Read next line
+end
+
+@enduml
